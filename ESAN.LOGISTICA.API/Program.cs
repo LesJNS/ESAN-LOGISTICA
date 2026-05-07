@@ -1,18 +1,26 @@
 using ESAN.LOGISTICA.API.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Connection String
 var _config = builder.Configuration;
 var cnx = _config.GetConnectionString("DevConnection");
-builder
-    .Services
-    .AddDbContext<LogisticaDbContext>
-    (options => options.UseSqlServer(cnx));
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// DbContext
+builder.Services.AddDbContext<LogisticaDbContext>(
+    options => options.UseSqlServer(cnx)
+);
+
+// Controllers + evitar ciclos infinitos JSON
+builder.Services.AddControllers()
+    .AddJsonOptions(x =>
+        x.JsonSerializerOptions.ReferenceHandler =
+            ReferenceHandler.IgnoreCycles
+    );
+
+// OpenAPI / Swagger
 builder.Services.AddOpenApi();
 
 var app = builder.Build();

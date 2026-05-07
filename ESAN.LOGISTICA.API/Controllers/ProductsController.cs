@@ -21,25 +21,106 @@ namespace ESAN.LOGISTICA.API.Controllers
         }
 
         // GET: api/Products
+        // api/products
+        // api/products?includeCategory=true
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Products>>> GetProducts()
+        public async Task<ActionResult> GetProducts(
+            bool includeCategory = false)
         {
-            return await _context.Products.ToListAsync();
+            // SIN JOIN
+            if (!includeCategory)
+            {
+                var products = await _context.Products
+                    .Select(p => new
+                    {
+                        p.IdProducto,
+                        p.Name,
+                        p.Price,
+                        p.IdCategory
+                    })
+                    .ToListAsync();
+
+                return Ok(products);
+            }
+
+            // CON JOIN
+            var result = await _context.Products
+                .Include(p => p.IdCategoryNavigation)
+                .Select(p => new
+                {
+                    p.IdProducto,
+                    p.Name,
+                    p.Price,
+                    p.IdCategory,
+                    Category = p.IdCategoryNavigation == null
+                        ? null
+                        : new
+                        {
+                            p.IdCategoryNavigation.IdCategory,
+                            p.IdCategoryNavigation.CategoryName
+                        }
+                })
+                .ToListAsync();
+
+            return Ok(result);
         }
 
         // GET: api/Products/5
+        // api/products/1
+        // api/products/1?includeCategory=true
         [HttpGet("{id}")]
-        public async Task<ActionResult<IEnumerable<Products>>> GetProducts(
+        public async Task<ActionResult> GetProducts(
+            int id,
             bool includeCategory = false)
-                {
-                    IQueryable<Products> query = _context.Products;
-
-                    if (includeCategory)
+        {
+            // SIN JOIN
+            if (!includeCategory)
+            {
+                var product = await _context.Products
+                    .Where(p => p.IdProducto == id)
+                    .Select(p => new
                     {
-                        query = query.Include(p => p.IdCategoryNavigation);
-                    }
+                        p.IdProducto,
+                        p.Name,
+                        p.Price,
+                        p.IdCategory
+                    })
+                    .FirstOrDefaultAsync();
 
-                    return await query.ToListAsync();
+                if (product == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(product);
+            }
+
+            // CON JOIN
+            var result = await _context.Products
+                .Include(p => p.IdCategoryNavigation)
+                .Where(p => p.IdProducto == id)
+                .Select(p => new
+                {
+                    p.IdProducto,
+                    p.Name,
+                    p.Price,
+                    p.IdCategory,
+                    Category = p.IdCategoryNavigation == null
+                        ? null
+                        : new
+                        {
+                            p.IdCategoryNavigation.IdCategory,
+                            p.IdCategoryNavigation.CategoryName
+                        }
+                })
+                .FirstOrDefaultAsync();
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
         }
 
         // PUT: api/Products/5
@@ -77,10 +158,11 @@ namespace ESAN.LOGISTICA.API.Controllers
         public async Task<ActionResult<Products>> PostProducts(Products products)
         {
             _context.Products.Add(products);
+
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
-                "GetProducts",
+                nameof(GetProducts),
                 new { id = products.IdProducto },
                 products
             );
@@ -98,6 +180,7 @@ namespace ESAN.LOGISTICA.API.Controllers
             }
 
             _context.Products.Remove(products);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
