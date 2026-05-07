@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ESAN.LOGISTICA.API.Data;
+﻿namespace ESAN.LOGISTICA.API.Data;
 
 public partial class Products
 {
-    public int Id { get; set; }
+    public int IdProducto { get; set; }
 
-    public string? Description { get; set; }
+    public string? Name { get; set; }
 
-    public decimal? UnitPrice { get; set; }
+    public decimal? Price { get; set; }
+
+    public int? IdCategory { get; set; }
+
+    public virtual Categories? IdCategoryNavigation { get; set; }
 }

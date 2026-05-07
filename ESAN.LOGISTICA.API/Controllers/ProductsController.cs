@@ -19,7 +19,6 @@ namespace ESAN.LOGISTICA.API.Controllers
         {
             _context = context;
         }
-        //Hola Mundo
 
         // GET: api/Products
         [HttpGet]
@@ -30,24 +29,24 @@ namespace ESAN.LOGISTICA.API.Controllers
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Products>> GetProducts(int id)
-        {
-            var products = await _context.Products.FindAsync(id);
+        public async Task<ActionResult<IEnumerable<Products>>> GetProducts(
+            bool includeCategory = false)
+                {
+                    IQueryable<Products> query = _context.Products;
 
-            if (products == null)
-            {
-                return NotFound();
-            }
+                    if (includeCategory)
+                    {
+                        query = query.Include(p => p.IdCategoryNavigation);
+                    }
 
-            return Ok(products);
+                    return await query.ToListAsync();
         }
 
         // PUT: api/Products/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProducts(int id, Products products)
         {
-            if (id != products.Id)
+            if (id != products.IdProducto)
             {
                 return BadRequest();
             }
@@ -74,14 +73,17 @@ namespace ESAN.LOGISTICA.API.Controllers
         }
 
         // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Products>> PostProducts(Products products)
         {
             _context.Products.Add(products);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProducts", new { id = products.Id }, products);
+            return CreatedAtAction(
+                "GetProducts",
+                new { id = products.IdProducto },
+                products
+            );
         }
 
         // DELETE: api/Products/5
@@ -89,6 +91,7 @@ namespace ESAN.LOGISTICA.API.Controllers
         public async Task<IActionResult> DeleteProducts(int id)
         {
             var products = await _context.Products.FindAsync(id);
+
             if (products == null)
             {
                 return NotFound();
@@ -102,7 +105,7 @@ namespace ESAN.LOGISTICA.API.Controllers
 
         private bool ProductsExists(int id)
         {
-            return _context.Products.Any(e => e.Id == id);
+            return _context.Products.Any(e => e.IdProducto == id);
         }
     }
 }

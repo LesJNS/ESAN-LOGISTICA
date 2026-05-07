@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ESAN.LOGISTICA.API.Data;
 
@@ -17,18 +15,46 @@ public partial class LogisticaDbContext : DbContext
 
     public virtual DbSet<Products> Products { get; set; }
 
+    public virtual DbSet<Categories> Categories { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=AO2300913;Database=LogisticaDB;Integrated Security=True;TrustServerCertificate=True");
+        => optionsBuilder.UseSqlServer(
+            "Server=LJNS;Database=LogisticaDB;Integrated Security=True;TrustServerCertificate=True"
+        );
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Categories>(entity =>
+        {
+            entity.HasKey(e => e.IdCategory);
+
+            entity.Property(e => e.IdCategory)
+                .HasColumnName("Id_Category");
+
+            entity.Property(e => e.CategoryName)
+                .HasMaxLength(100);
+        });
+
         modelBuilder.Entity<Products>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Products__3214EC078791CFED");
+            entity.HasKey(e => e.IdProducto);
 
-            entity.Property(e => e.Description).HasMaxLength(100);
-            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.IdProducto)
+                .HasColumnName("Id_Producto");
+
+            entity.Property(e => e.Name)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.IdCategory)
+                .HasColumnName("Id_Category");
+
+            entity.HasOne(d => d.IdCategoryNavigation)
+                .WithMany(p => p.Products)
+                .HasForeignKey(d => d.IdCategory)
+                .HasConstraintName("FK_Products_Categories");
         });
 
         OnModelCreatingPartial(modelBuilder);
